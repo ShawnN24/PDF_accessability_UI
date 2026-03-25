@@ -82,7 +82,7 @@ export class CdkBackendStack extends cdk.Stack {
       status: amplify.RedirectStatus.REWRITE
     }));
 
-    const domainPrefix = `pdf-ui-auth${Math.random().toString(36).substring(2, 8)}`; // must be globally unique in that region
+    const domainPrefix = `pdf-ui-auth-${cdk.Names.uniqueId(this).slice(-8).toLowerCase()}`; // must be globally unique in that region
     const Default_Group = 'DefaultUsers';
     const Amazon_Group = 'AmazonUsers';
     const Admin_Group = 'AdminUsers';
@@ -272,7 +272,8 @@ export class CdkBackendStack extends cdk.Stack {
     // Domain prefix is defined above with appUrl
     const userPoolDomain = new cognito.CfnUserPoolDomain(this, 'PDF-Accessability-User-Pool-Domain', {
       domain: domainPrefix,
-      userPoolId: userPool.userPoolId
+      userPoolId: userPool.userPoolId,
+      managedLoginVersion: 2,
     });
 
     const userPoolClient = userPool.addClient('PDF-Accessability-User-Pool-Client', {
@@ -305,6 +306,14 @@ export class CdkBackendStack extends cdk.Stack {
 
     
 
+    // (Optional) If CfnManagedLoginBranding is not critical, remove it or put it in a separate stack
+    const managed_login = new cognito.CfnManagedLoginBranding(this, 'MyManagedLoginBranding', {
+      userPoolId: userPool.userPoolId,
+      clientId: userPoolClient.userPoolClientId,
+      returnMergedResources: true,
+      useCognitoProvidedValues: true,
+      
+    });
 
     // ------------- Identity Pool + IAM Roles for S3 Access --------------------
     const identityPool = new cognito.CfnIdentityPool(this, 'PDFIdentityPool', {
